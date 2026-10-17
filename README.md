@@ -28,7 +28,7 @@ This repository contains a fully synthesizable **PID (Proportional-Integral-Deri
 ## How to Run Simulation
 
 ### Online (EDA Playground / ChipVerify)
-1. Copy `design.sv` and `testbench.sv` into EDA Playground / ChipVerify editor[cite: 1, 2].
+1. Copy `design.sv` and `testbench.sv` into EDA Playground / ChipVerify editor.
 2. Choose **Icarus Verilog** or **ModelSim** as the simulator.
 3. Check the **"Open EPWave after run"** option to view generated waveform diagrams.
 
