@@ -1,0 +1,70 @@
+module pid_controller (
+    input clk,                    // Clock signal
+    input rst_n,                  // Active low reset
+    // Setpoints and Feedback
+    input signed [15:0] setpoint, // Desired target value
+    input signed [15:0] feedback, // Measured value from sensor
+    // PID Parameters (Tuning Constants)
+    input [7:0] Kp,               // Proportional gain (scaled up by 2^8)
+    input [7:0] Ki,               // Integral gain (scaled up by 2^8)
+    input [7:0] Kd,               // Derivative gain (scaled up by 2^8)
+    // Control Outputs
+    output [7:0] pwm_duty_out     // Final PWM output (0-255)
+);
+
+localparam SCALING_FACTOR = 8;
+
+// State registers
+reg signed [16:0] error_prev;
+reg signed [31:0] error_integral;
+
+// Combinational wires for immediate calculation
+wire signed [16:0] error_curr;
+wire signed [16:0] error_derivative;
+wire signed [24:0] p_term;
+wire signed [39:0] i_term;
+wire signed [24:0] d_term;
+wire signed [41:0] pid_out_raw;
+wire signed [41:0] pid_scaled;
+
+// 1. Instantaneous Error Calculations
+assign error_curr = setpoint - feedback;
+assign error_derivative = error_curr - error_prev;
+
+// 2. Structural Sign Extensions for Multiplications
+assign p_term = error_curr * $signed({1'b0, Kp});
+assign d_term = error_derivative * $signed({1'b0, Kd});
+assign i_term = error_integral * $signed({1'b0, Ki});
+
+// 3. Sum the Terms
+assign pid_out_raw = p_term + i_term + d_term;
+
+// Arithmetic right shift to handle fixed-point scaling
+assign pid_scaled = pid_out_raw >>> SCALING_FACTOR;
+
+// 4. Synchronous State Updates (Single Block)
+always @(posedge clk or negedge rst_n) begin 
+    if (~rst_n) begin
+        error_prev <= 0;
+        error_integral <= 0;
+    end else begin
+        error_prev <= error_curr;
+        
+        // Anti-windup clamping to protect integral accumulator
+        if (error_curr > -500 && error_curr < 500) begin
+            if (error_integral > 32'sh000FFFFF)
+                error_integral <= 32'sh000FFFFF;
+            else if (error_integral < -32'sh000FFFFF)
+                error_integral <= -32'sh000FFFFF;
+            else
+                error_integral <= error_integral + error_curr;
+        end
+    end
+end
+
+// 5. Safe Combinational Output Clamping (0 to 255)
+assign pwm_duty_out = (pid_scaled[41]) ? 8'd0 :
+                      (pid_scaled > 255) ? 8'd255 :
+                      pid_scaled[7:0];
+
+endmodule
