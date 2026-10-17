@@ -38,6 +38,10 @@ Run the following commands in your terminal:
 iverilog -o pid_sim pid_controller.v pid_controller_tb.v
 vvp pid_sim
 gtkwave dump.vcd
+```
+## WaveForm
 
-<img width="1024" height="1024" alt="PID Controller Using Verilog" src="https://github.com/user-attachments/assets/ffeff22d-beaa-4b24-84fd-5ab7b0e6faa8" />
+<img width="1024" height="1024" alt="PID Controller Using Verilog" src="https://github.com/user-attachments/assets/9a1db98f-0e42-4dad-9d75-ffbae1268ab4" />
+
+
 
